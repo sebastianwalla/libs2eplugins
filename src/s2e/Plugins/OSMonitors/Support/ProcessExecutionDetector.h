@@ -41,10 +41,13 @@ private:
 
     StringSet m_trackedModules;
 
-    void onProcessLoad(S2EExecutionState *state, uint64_t pageDir, uint64_t pid, const std::string &ImageFileName);
+    bool trackChildProcesses;
+
+    void onProcessLoad(S2EExecutionState *state, uint64_t pageDir, uint64_t pid, uint64_t parentPid, const std::string &ImageFileName);
     void onProcessUnload(S2EExecutionState *state, uint64_t pageDir, uint64_t pid, uint64_t returnCode);
 
     void onMonitorLoadCb(S2EExecutionState *state);
+    bool shouldTrackChild(S2EExecutionState *state, uint64_t parentPid, uint64_t pid);
 };
 
 } // namespace plugins

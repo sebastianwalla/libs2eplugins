@@ -65,7 +65,13 @@ void FunctionMonitor::slotModuleTranslateBlockEnd(ExecutionSignal *signal, S2EEx
 void FunctionMonitor::slotTranslateBlockEnd(ExecutionSignal *signal, S2EExecutionState *state, TranslationBlock *tb,
                                             uint64_t pc, bool isStatic, uint64_t staticTarget) {
     /* We intercept all call and ret translation blocks */
+    /* Also inspect JMPs in case of jump thunk tables with function pointers
+     * || tb->se_tb_type == TB_JMP ||  tb->se_tb_type == TB_JMP_IND
+     * */
     if (tb->se_tb_type == TB_CALL || tb->se_tb_type == TB_CALL_IND) {
+        /*if (tb->se_tb_type == TB_JMP ||  tb->se_tb_type == TB_JMP_IND){
+            getDebugStream(state) << "Instrumenting JMP or JMP_IND instruction at pc=" << hexval(pc)<<" \n";
+        }*/
         signal->connect(sigc::mem_fun(*this, &FunctionMonitor::slotCall));
     }
 }
@@ -145,6 +151,7 @@ void FunctionMonitorState::slotCall(S2EExecutionState *state, uint64_t pc) {
     target_ulong cr3 = state->regs()->getPageDir();
     target_ulong eip = state->regs()->getPc();
 
+
     if (!m_newCallDescriptors.empty()) {
         m_callDescriptors.insert(m_newCallDescriptors.begin(), m_newCallDescriptors.end());
         m_newCallDescriptors.clear();
@@ -180,6 +187,8 @@ void FunctionMonitorState::slotCall(S2EExecutionState *state, uint64_t pc) {
                 cr3 = m_plugin->m_monitor->getPageDir(state, pc);
             }
             if (it->second.cr3 == (uint64_t) -1 || it->second.cr3 == cr3) {
+                m_plugin->getDebugStream(state) << "Call instruction at eip=" << hexval(eip) << ", cr3=" << hexval(cr3) << "\n";
+                m_plugin->getDebugStream(state) << "Emiting callback" << "\n";
                 cd.signal.emit(state, this);
             }
         }

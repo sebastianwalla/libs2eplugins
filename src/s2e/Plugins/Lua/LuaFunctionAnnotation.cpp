@@ -14,6 +14,7 @@
 #include <s2e/Plugins/ExecutionMonitors/FunctionMonitor.h>
 #include <s2e/Plugins/OSMonitors/OSMonitor.h>
 #include <s2e/Plugins/OSMonitors/Support/ModuleExecutionDetector.h>
+#include <s2e/Plugins/OSMonitors/Support/ProcessExecutionDetector.h>
 #include <s2e/Plugins/Support/KeyValueStore.h>
 
 #include "LuaAnnotationState.h"
@@ -96,6 +97,7 @@ void LuaFunctionAnnotation::initialize() {
     m_detector = s2e()->getPlugin<ModuleExecutionDetector>();
     m_functionMonitor = s2e()->getPlugin<FunctionMonitor>();
     m_kvs = s2e()->getPlugin<KeyValueStore>();
+    m_processDetector = s2e()->getPlugin<ProcessExecutionDetector>();
 
     bool ok;
     ConfigFile *cfg = s2e()->getConfig();
@@ -168,7 +170,14 @@ void LuaFunctionAnnotation::hookAnnotation(S2EExecutionState *state, const Modul
 }
 
 void LuaFunctionAnnotation::onModuleLoad(S2EExecutionState *state, const ModuleDescriptor &module) {
-    // Register all function hooks
+    // Register all function hooks, but only if the pid was added to the tracked pids
+
+    if(!m_processDetector->isTracked(state,module.Pid)){
+        getDebugStream() <<  "would not annotating this module since it is not tracked, pid: " << hexval(module.Pid) << "\n";
+        // return without doing anything as pid is not tracked
+        //return; //TODO debug and reactivate
+    }
+
     const std::string *mid = m_detector->getModuleId(module);
     if (!mid) {
         return;

@@ -19,6 +19,9 @@ namespace plugins {
 
 class ModuleMap;
 class ProcessExecutionDetector;
+class KeyValueStore;
+class FunctionMonitor;
+class FunctionMonitorState;
 
 class LuaInstructionAnnotation : public Plugin {
     S2E_PLUGIN
@@ -28,14 +31,26 @@ public:
     }
 
     struct Annotation {
-        const std::string annotationName;
-        const uint64_t pc;
 
-        Annotation(std::string name, uint64_t pc_) : annotationName(name), pc(pc_) {
+        enum CallingConvention { STDCALL, CDECL, MAX_CONV };
+        const std::string annotationName;
+        const std::string returnAnnotationName;
+        const uint64_t pc;
+        const uint64_t paramCount;
+        const CallingConvention convention;
+        const bool fork;
+
+
+        Annotation(std::string name, std::string ret_name, uint64_t pc_, uint64_t paramCount_, CallingConvention cc, bool fork_) : annotationName(name), returnAnnotationName(ret_name), pc(pc_), paramCount(paramCount_), convention(cc), fork(fork_) {
+        }
+
+        Annotation(std::string name, uint64_t pc_) : annotationName(name), returnAnnotationName(""), pc(pc_), paramCount(0), convention(CDECL),
+                                                     fork(false) {
         }
 
         Annotation(uint64_t pc_) : Annotation("", pc_) {
         }
+
 
         bool operator==(const Annotation &a1) const {
             return pc == a1.pc && annotationName == a1.annotationName;
@@ -59,6 +74,9 @@ private:
 
     ProcessExecutionDetector *m_detector;
     ModuleMap *m_modules;
+    KeyValueStore *m_kvs;
+    FunctionMonitor *m_functionMonitor;
+
     sigc::connection m_instructionStart;
 
 
@@ -73,6 +91,8 @@ private:
     void onInstruction(S2EExecutionState *state, uint64_t pc, const ModuleAnnotations *annotations, uint64_t modulePc);
 
     void onMonitorLoad(S2EExecutionState *state);
+    void forkAnnotation(S2EExecutionState *state, const Annotation &entry);
+    void onFunctionRet(S2EExecutionState *state, Annotation entry);
 };
 
 } // namespace plugins

@@ -17,6 +17,8 @@ const char LuaS2EExecutionStateRegisters::className[] = "LuaS2EExecutionStateReg
 
 Lunar<LuaS2EExecutionStateRegisters>::RegType LuaS2EExecutionStateRegisters::methods[] = {
     LUNAR_DECLARE_METHOD(LuaS2EExecutionStateRegisters, getPc),
+    LUNAR_DECLARE_METHOD(LuaS2EExecutionStateRegisters, getSp),
+    LUNAR_DECLARE_METHOD(LuaS2EExecutionStateRegisters, setPc),
     LUNAR_DECLARE_METHOD(LuaS2EExecutionStateRegisters, write),
     LUNAR_DECLARE_METHOD(LuaS2EExecutionStateRegisters, read),
     {0, 0}};
@@ -24,6 +26,17 @@ Lunar<LuaS2EExecutionStateRegisters>::RegType LuaS2EExecutionStateRegisters::met
 int LuaS2EExecutionStateRegisters::getPc(lua_State *L) {
     lua_pushinteger(L, m_state->regs()->getPc());
     return 1;
+}
+
+    int LuaS2EExecutionStateRegisters::getSp(lua_State *L) {
+        lua_pushinteger(L, m_state->regs()->getSp());
+        return 1;
+    }
+
+int LuaS2EExecutionStateRegisters::setPc(lua_State *L){
+    uint64_t pc=luaL_checkinteger(L,1);
+    m_state->regs()->setPc(pc);
+    return 0;
 }
 
 int LuaS2EExecutionStateRegisters::read(lua_State *L) {

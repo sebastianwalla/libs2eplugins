@@ -136,6 +136,7 @@ int LuaS2EExecutionState::registerInstructionAnnotation(lua_State *L){
     LuaInstructionAnnotation *m_instrAnnotation = static_cast<s2e::plugins::LuaInstructionAnnotation *>(g_s2e->getPlugin("LuaInstructionAnnotation"));
 
     m_instrAnnotation->initialize();
+    // using 0 as paramcount since this is purely ment for instruction annotation
     bool ret=m_instrAnnotation->registerAnnotation(moduleId, s2e::plugins::LuaInstructionAnnotation::Annotation(annotationName, pc));
     lua_pushboolean(L, ret);
     return 1;

@@ -20,6 +20,7 @@ class FunctionMonitor;
 class FunctionMonitorState;
 class KeyValueStore;
 class ModuleExecutionDetector;
+class ProcessExecutionDetector;
 class OSMonitor;
 
 class LuaFunctionAnnotation : public Plugin {
@@ -57,6 +58,7 @@ private:
 
     OSMonitor *m_monitor;
     ModuleExecutionDetector *m_detector;
+    ProcessExecutionDetector *m_processDetector;
     FunctionMonitor *m_functionMonitor;
     KeyValueStore *m_kvs;
 

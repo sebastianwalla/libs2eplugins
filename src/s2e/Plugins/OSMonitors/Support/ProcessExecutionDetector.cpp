@@ -48,6 +48,7 @@ void ProcessExecutionDetector::initialize() {
     // Fetch the list of modules where to report the calls
     bool ok;
     ConfigFile *cfg = s2e()->getConfig();
+    trackChildProcesses=cfg->getBool(getConfigKey() + ".trackChildProcesses");
     ConfigFile::string_list moduleList =
         cfg->getStringList(getConfigKey() + ".moduleNames", ConfigFile::string_list(), &ok);
 
@@ -64,13 +65,14 @@ void ProcessExecutionDetector::initialize() {
     m_monitor->onMonitorLoad.connect(sigc::mem_fun(*this, &ProcessExecutionDetector::onMonitorLoadCb));
 }
 
-void ProcessExecutionDetector::onProcessLoad(S2EExecutionState *state, uint64_t pageDir, uint64_t pid,
+void ProcessExecutionDetector::onProcessLoad(S2EExecutionState *state, uint64_t pageDir, uint64_t pid, uint64_t parentPid,
                                              const std::string &ImageFileName) {
-    if (m_trackedModules.find(ImageFileName) != m_trackedModules.end()) {
+    // Track if name is contained in config list or when the trackChildProcess option is activated if the parent Process is tracked
+    if (m_trackedModules.find(ImageFileName) != m_trackedModules.end() || shouldTrackChild(state,parentPid,pid)) {
         DECLARE_PLUGINSTATE(ProcessExecutionDetectorState, state);
 
-        getDebugStream(state) << "starting to track: " << ImageFileName << " (pid: " << hexval(pid)
-                              << " as: " << hexval(pageDir) << ")\n";
+        getDebugStream(state) << "starting to track: " << ImageFileName << " (parent pid: "<< hexval(parentPid)
+                              << ", pid: " << hexval(pid) << " as: " << hexval(pageDir) << ")\n";
 
         plgState->m_trackedPids.insert(pid);
     }
@@ -121,6 +123,7 @@ bool ProcessExecutionDetector::isTrackedPc(S2EExecutionState *state, uint64_t pc
         }
     }
 
+
     uint64_t pid = m_monitor->getPid(state, state->regs()->getPc());
 
     return plgState->m_trackedPids.count(pid) > 0;
@@ -128,6 +131,12 @@ bool ProcessExecutionDetector::isTrackedPc(S2EExecutionState *state, uint64_t pc
 
 void ProcessExecutionDetector::onMonitorLoadCb(S2EExecutionState *state) {
     onMonitorLoad.emit(state);
+}
+
+bool ProcessExecutionDetector::shouldTrackChild(S2EExecutionState *state,uint64_t parentPid, uint64_t pid){
+        DECLARE_PLUGINSTATE(ProcessExecutionDetectorState, state);
+
+        return trackChildProcesses && (plgState->m_trackedPids.count(parentPid) > 0);
 }
 
 } // namespace plugins

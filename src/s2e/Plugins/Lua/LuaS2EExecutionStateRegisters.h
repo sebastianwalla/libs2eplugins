@@ -32,6 +32,8 @@ public:
     int read(lua_State *L);
     int write(lua_State *L);
     int getPc(lua_State *L);
+    int getSp(lua_State *L);
+    int setPc(lua_State *L);
 };
 }
 }
